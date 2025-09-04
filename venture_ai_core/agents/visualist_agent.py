@@ -26,32 +26,43 @@ def generate_image_with_a4f(prompt: str, api_key: str, base_url: str) -> str:
         return f"Image generation failed: {e}"
 
 def visualist_node(state: VentureAgentState) -> dict:
-    """The node for the Visualist agent with an improved creative brief."""
+    """The node for the Visualist agent with the corrected input."""
     print("[Visualist] Designing logo...", file=sys.stderr)
 
-    # Step 1: Use Gemini Pro as the Creative Director
     print("[Visualist] Generating creative prompt with Gemini...", file=sys.stderr)
     llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0.7, google_api_key=os.getenv("GEMINI_API_KEY"))
     
-    # UPGRADED PROMPT for more professional output
     prompt_generation_template = ChatPromptTemplate.from_template(
-        "You are a professional logo designer and prompt engineer for AI image generators. Based on the following brand identity, write a single, highly-detailed text prompt to create a logo. "
-        "The prompt must be a single paragraph. Describe the style (e.g., minimalist, modern, vintage), color palette, subject matter, and overall mood. "
-        "Use professional design terms. Specify that the logo should be a vector, be suitable for web, and work on both light and dark backgrounds. Avoid clichés.\n\n"
-        "**Brand Name:** {name}\n"
-        "**Brand Story:** {story}\n"
-        "**Target Audience:** {persona}"
+         """You are a professional logo designer. Create one single, detailed AI image prompt for a logo.
+
+         Brand Name: {name}
+         Business Idea: {idea}
+         Story: {story}
+         Persona: {persona}
+
+         Rules:
+         - Style: minimalist, modern, luxury
+         - Colors: teal, deep green, metallic grey accents
+         - Include subtle eco/water elements (leaf or droplet) without clichés
+         - Must be scalable vector, work on light and dark backgrounds
+         - Mood: premium, eco-conscious, serene
+
+         Output the design brief as one clean paragraph.
+         """
     )
     
     chain = prompt_generation_template | llm | StrOutputParser()
+    
+    # --- THE FIX IS HERE ---
+    # We now pass the 'business_idea' from the state to the chain.
     logo_prompt = chain.invoke({
         "name": state['brand_name'],
         "story": state['brand_story'],
-        "persona": state['target_persona']
+        "persona": state['target_persona'],
+        "idea": state['business_idea'] # <-- Added the missing variable
     })
     print(f"[Visualist] Generated logo prompt: {logo_prompt}", file=sys.stderr)
 
-    # Step 2: Use A4F API as the Graphic Designer
     api_key = os.getenv("A4F_API_KEY")
     base_url = os.getenv("A4F_API_URL")
     if not api_key or not base_url:

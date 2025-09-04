@@ -62,8 +62,15 @@ def namer_node(state: VentureAgentState) -> dict:
     """The Namer Agent: Brainstorms the brand name with better constraints."""
     print("[Namer] Generating brand name...", file=sys.stderr)
     chain = get_llm_chain(
-        "You are an expert brand strategist. Brainstorm a creative, modern, and memorable brand name for this business idea: '{idea}'. "
-        "Provide just one single, compelling name. The name should be 1-2 words, easy to pronounce, and suitable for a web domain."
+       """You are an expert brand strategist. 
+        Based strictly on this business idea: '{idea}', generate ONE single, creative, modern, and memorable brand name.  
+
+        Rules:
+        - 1–2 words only  
+        - Must sound premium, eco-conscious, and professional  
+        - Easy to pronounce and suitable for a .com domain  
+        - Do NOT invent random themes not present in the idea.
+        """
     )
     name = chain.invoke({"idea": state['business_idea']})
     print(f"[Namer] Generated brand name: {name}", file=sys.stderr)
@@ -74,9 +81,18 @@ def persona_node(state: VentureAgentState) -> dict:
     print("[Persona] Generating persona...", file=sys.stderr)
     # CRITICAL FIX: Pass the original business idea to prevent hallucination.
     chain = get_llm_chain(
-        "You are a market research analyst. Create a detailed profile of the ideal target customer for a brand named '{name}', "
-        "which is based on this core business idea: '{idea}'. "
-        "Be specific about their age, profession, motivations, lifestyle, and the core problem this brand solves for them."
+        """You are a market research analyst. 
+        Create a detailed profile of the ideal target customer for a brand named '{name}', 
+        which is based on this core business idea: '{idea}'.  
+
+        Be specific and include in bullet points:
+        - Age range, profession, income, and location  
+        - Lifestyle values and traits  
+        - 3–4 key motivations (time-saving, eco-consciousness, luxury, etc.)  
+        - The core problem this brand solves for them  
+
+        Keep it concise, professional, and grounded ONLY in the business idea.
+        """
     )
     persona = chain.invoke({
         "name": state['brand_name'],
@@ -89,8 +105,16 @@ def wordsmith_node(state: VentureAgentState) -> dict:
     """The Wordsmith Agent: Creates a more evocative brand story."""
     print("[Wordsmith] Generating story...", file=sys.stderr)
     chain = get_llm_chain(
-        "You are a creative copywriter. Write a compelling, short brand story (2-3 sentences) for '{name}', a brand with this core idea: '{idea}'. "
-        "The story should capture the essence of the brand and speak directly to the motivations of this target customer: {persona}."
+    """You are a creative copywriter. 
+        Write a compelling, short brand story (2–3 sentences) for '{name}', 
+        a brand with this core idea: '{idea}'.  
+
+        The story should:
+        - Speak directly to the motivations of this target customer: {persona}  
+        - Emphasize eco-friendliness, luxury, and convenience  
+        - Be polished, professional, and emotionally engaging  
+        - Stay faithful to the business idea (do NOT invent unrelated features).
+        """
     )
     story = chain.invoke({
         "name": state['brand_name'],
@@ -99,4 +123,3 @@ def wordsmith_node(state: VentureAgentState) -> dict:
     })
     print("[Wordsmith] Generated story", file=sys.stderr)
     return {"brand_story": story}
-
