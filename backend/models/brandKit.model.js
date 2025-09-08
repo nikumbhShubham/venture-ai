@@ -38,9 +38,15 @@ const brandKitSchema = mongoose.Schema(
       enum: ["pending", "completed", "failed"],
       default: "pending",
     },
-    errorMessage: {
-      type: String,
-    },
+
+    colorPalette: { type: Map, of: String, default: {} },
+    fontPairing: { type: Map, of: String, default: {} },
+    marketPositioning: { type: String, default: "" },
+    marketingChannels: { type: [String], default: [] },
+    contentPillars: { type: [String], default: [] },
+    postIdeas: { type: [String], default: [] },
+    finalReport: { type: String, default: "" },
+    errorMessage: { type: String, default: "" },
   },
   {
     timestamps: true,

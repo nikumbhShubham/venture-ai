@@ -1,0 +1,101 @@
+import React, { useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { useAuthStore } from '../stores/useAuthStore.ts';
+import { useBrandKitStore } from '../stores/useBrandKitStore.ts';
+import { PlusCircle, Loader, LogOut, Image as ImageIcon, Wind } from 'lucide-react';
+
+const DashboardPage: React.FC = () => {
+    const { user, logout } = useAuthStore();
+    const { brandKits, isLoading, fetchBrandKits } = useBrandKitStore();
+
+    useEffect(() => {
+        
+        fetchBrandKits();
+    }, [fetchBrandKits]);
+
+    return (
+        <div className="min-h-screen bg-[#0a0f1f] text-slate-200 font-sans">
+            <header className="bg-slate-900/50 backdrop-blur-md p-4 border-b border-slate-700 flex justify-between items-center sticky top-0 z-10">
+                <Link to="/" className="text-2xl font-bold text-white tracking-wider">
+                    Venture <span className="text-purple-400">AI</span>
+                </Link>
+                <div className="flex items-center gap-4">
+                    <div className="text-sm">Credits: <span className="font-bold text-purple-400">{user?.credits ?? 0}</span></div>
+                    <button onClick={logout} className="flex items-center gap-2 text-slate-300 hover:text-white transition-colors">
+                        <LogOut size={18} /> Logout
+                    </button>
+                </div>
+            </header>
+            <main className="p-8 container mx-auto">
+                <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+                    <div className="flex justify-between items-center mb-10">
+                        <div>
+                            <h2 className="text-4xl font-bold text-white">Welcome, {user?.name}!</h2>
+                            <p className="text-slate-400 mt-2">Here are your generated brand kits.</p>
+                        </div>
+                        <Link to="/generate" className="flex items-center gap-2 bg-purple-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-purple-700 transition-colors shadow-lg shadow-purple-500/20">
+                            <PlusCircle size={20} /> Create New Kit
+                        </Link>
+                    </div>
+                </motion.div>
+
+                {isLoading && brandKits.length === 0 ? (
+                    <div className="flex justify-center items-center h-64"><Loader className="w-12 h-12 animate-spin text-purple-400" /></div>
+                ) : !isLoading && brandKits.length === 0 ? (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-20 bg-slate-800/30 rounded-xl border border-slate-700">
+                        <Wind size={48} className="mx-auto text-slate-500 mb-4" />
+                        <h3 className="text-2xl font-bold text-white">Nothing here yet!</h3>
+                        <p className="text-slate-400 mt-2">Click "Create New Kit" to generate your first brand identity.</p>
+                    </motion.div>
+                ) : (
+                    <motion.div 
+                        variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
+                        initial="hidden"
+                        animate="visible"
+                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+                    >
+                        {brandKits.map(kit => {
+                            const logoUrl = `data:image/png;base64,${kit.logoConcept}`;
+                            const hasValidLogo = kit.logoConcept && !kit.logoConcept.includes('failed');
+
+                            return (
+                                <Link to={`/results/${kit._id}`} key={kit._id}>
+                                    <motion.div 
+                                        variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }}
+                                        className="bg-slate-800/50 backdrop-blur-md rounded-xl shadow-lg border border-slate-700 overflow-hidden h-full hover:border-purple-400/50 transition-all group"
+                                    >
+                                        <div className="p-6 flex flex-col h-full">
+                                            <div className="w-full h-40 bg-slate-700 rounded-md mb-4 flex flex-col items-center justify-center relative overflow-hidden p-4">
+                                                {kit.status === 'completed' ? (
+                                                    hasValidLogo ? (
+                                                        <img src={logoUrl} alt={`${kit.brandName} Logo`} className="w-full h-full object-contain" />
+                                                    ) : (
+                                                        <div className="text-center text-slate-500">
+                                                            <ImageIcon size={40} className="mx-auto mb-2" />
+                                                            <p>Logo Failed</p>
+                                                        </div>
+                                                    )
+                                                ) : (
+                                                    <div className="flex flex-col items-center text-center">
+                                                        <Loader className="animate-spin text-purple-400 mb-2" />
+                                                        <span className="text-slate-300 font-semibold">Generating...</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <h3 className="text-xl font-bold text-white truncate">{kit.brandName}</h3>
+                                            <p className="text-sm text-slate-400 truncate flex-grow">{kit.businessIdea}</p>
+                                        </div>
+                                    </motion.div>
+                                </Link>
+                            );
+                        })}
+                    </motion.div>
+                )}
+            </main>
+        </div>
+    );
+};
+
+export default DashboardPage;
+
