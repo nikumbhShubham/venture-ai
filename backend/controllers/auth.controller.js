@@ -5,16 +5,18 @@ const registerUser = async (req, res) => {
   const { name, email, password } = req.body;
 
   const userExists = await User.findOne({ email });
-
   if (userExists) {
     res.status(400);
-    throw new Error("user already exists!!");
+    throw new Error("User already exists!");
   }
 
   const user = await User.create({
     name,
     email,
     password,
+    subscriptionPlan: "free",         
+    subscriptionStatus: "inactive",   
+    credits: 5,                       
   });
 
   if (user) {
@@ -24,11 +26,14 @@ const registerUser = async (req, res) => {
       name: user.name,
       email: user.email,
       credits: user.credits,
-      token: token,
+      subscriptionPlan: user.subscriptionPlan,
+      subscriptionStatus: user.subscriptionStatus,
+      stripeCustomerId: user.stripeCustomerId,
+      token,
     });
   } else {
     res.status(400);
-    throw new Error("Invalid user data!!");
+    throw new Error("Invalid user data!");
   }
 };
 
@@ -43,29 +48,36 @@ const authUser = async (req, res) => {
       name: user.name,
       email: user.email,
       credits: user.credits,
-      token: token,
+      subscriptionPlan: user.subscriptionPlan,
+      subscriptionStatus: user.subscriptionStatus,
+      stripeCustomerId: user.stripeCustomerId,
+      token,
     });
   } else {
-    res.status(401); // 401 Unauthorized
+    res.status(401);
     throw new Error("Invalid email or password");
   }
 };
 
 const getUserProfile = async (req, res) => {
-    // The user object is attached to the request in the 'protect' middleware
-    const user = req.user; 
-    
-    if (user) {
-        res.json({
-            _id: user._id,
-            name: user.name,
-            email: user.email,
-            credits: user.credits,
-        });
-    } else {
-        res.status(404);
-        throw new Error('User not found');
-    }
+  const user = req.user; // from protect middleware
+
+  if (user) {
+    res.json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      credits: user.credits,
+      subscriptionPlan: user.subscriptionPlan,
+      subscriptionStatus: user.subscriptionStatus,
+      stripeCustomerId: user.stripeCustomerId,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    });
+  } else {
+    res.status(404);
+    throw new Error("User not found");
+  }
 };
 
-export {registerUser,authUser,getUserProfile};
+export { registerUser, authUser, getUserProfile };

@@ -8,6 +8,7 @@ import { createClient } from 'redis'
 import connectDB from './config/db.js';
 import authRouter from './routes/auth.routes.js';
 import brandKitRouter from './routes/brandkit.routes.js';
+import stripeRoutes from './routes/stripe.routes.js';
 
 
 
@@ -18,10 +19,15 @@ const app=express();
 
 app.use(cors());
 
+// ✅ Stripe webhooks MUST be before express.json()
+import { stripeWebhook } from './controllers/stripe.controller.js'
+app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), stripeWebhook)
+
 app.use(express.json())
 
 app.use('/api/auth',authRouter);
 app.use('/api/brandkits',brandKitRouter);
+app.use('/api/stripe',stripeRoutes);
 
 
 const server = http.createServer(app); 

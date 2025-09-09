@@ -28,9 +28,20 @@ export const registerUser=(userData: any)=>{
 export const loginUser=(userData:any)=>{
     return api.post('auth/login',userData);
 }
+export const getUserProfile = async () => {
+  const token = localStorage.getItem("auth-storage-token"); // get latest token
+  const { data } = await axios.get("/api/users/profile", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return { data };
+};
 
 
 
 export const getBrandKits=()=> api.get('brandkits');
 export const createBrandKit=(data:{businessIdea:string})=> api.post('brandkits',data);
+
+
 export const getBrandKitById=()=>(id:string)=>api.get(`brandkits/${id}`);
+
+export const createCheckoutSession = (priceId: string) => api.post('stripe/create-checkout-session', { priceId });

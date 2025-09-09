@@ -1,6 +1,6 @@
 import {create} from 'zustand'
 import {persist} from 'zustand/middleware'
-import { loginUser,registerUser } from '../services/apiService'
+import { loginUser,registerUser, getUserProfile } from '../services/apiService'
 
 interface AuthState{
     user:any,
@@ -10,6 +10,7 @@ interface AuthState{
     login:(userData:any,navigate:(path:string)=>void)=>Promise<void>,
     register:(userData:any,navigate:(path:string)=>void)=>Promise<void>,
     logout:()=>void;
+    fetchUserProfile: () => Promise<void>;
     clearError:()=>void;
 }
 
@@ -46,6 +47,17 @@ export const useAuthStore=create<AuthState>()(
                 set({user:null,token:null});
                 window.location.href="/login"
             },
+           fetchUserProfile: async () => {
+  try {
+    const { data } = await getUserProfile();
+    set({ user: data });
+    return data; // <-- return updated user
+  } catch (error) {
+    console.error("Failed to refetch user profile", error);
+  }
+},
+
+
             clearError:()=>set({error:null})
         }),
         {
