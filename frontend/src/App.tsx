@@ -11,6 +11,8 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import DashboardPage from "./pages/DashboardPage";
 import GenerationPage from "./pages/GenerationPage";
 import ResultsPage from "./pages/ResultsPage";
+// import BrandingCanvasPage from "./pages/BrandingCanvasPage"
+import BrandingWorkspace from "./pages/BrandingWorkspace";
 
 const SocketConnector = () => {
     const { socket } = useSocket();
@@ -36,7 +38,8 @@ function App() {
         <Route path="/login" element={<Login />} />
 
         <Route element={<ProtectedRoute />}>
-          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/dashboard" element={<BrandingWorkspace />} />
+          {/* <Route path="/dashboard" element={<BrandingCanvasPage/>} /> */}
           <Route path="/generate" element={<GenerationPage />} />
           <Route path="/results/:id" element={<ResultsPage />} />
         </Route>

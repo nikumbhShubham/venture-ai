@@ -78,7 +78,7 @@ export const stripeWebhook = async (req, res) => {
           user.stripeCustomerId = session.customer;
           user.subscriptionStatus = "active";
           await user.save();
-          console.log(`✅ User ${userId} upgraded to Pro.`);
+          console.log(` User ${userId} upgraded to Pro.`);
         }
         break;
       }
@@ -89,7 +89,7 @@ export const stripeWebhook = async (req, res) => {
         if (user) {
           user.subscriptionStatus = "past_due";
           await user.save();
-          console.log(`⚠️ User ${user._id} payment failed.`);
+          console.log(` User ${user._id} payment failed.`);
         }
         break;
       }
@@ -103,7 +103,7 @@ export const stripeWebhook = async (req, res) => {
           user.subscriptionStatus = "canceled";
           user.stripeSubscriptionId = undefined;
           await user.save();
-          console.log(`🛑 User ${user._id} downgraded to Free.`);
+          console.log(` User ${user._id} downgraded to Free.`);
         }
         break;
       }

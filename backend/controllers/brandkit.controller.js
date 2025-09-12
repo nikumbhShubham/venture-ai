@@ -71,4 +71,26 @@ const getBrandKitsbyId = async (req, res) => {
   }
 };
 
-export default { createBrandKit, getBrandKitsbyId, getUserBrandKits };
+const deleteBrandKit = async (req, res) => {
+  try {
+    const brandKit = await BrandKit.findById(req.params.id);
+    if (!brandKit) {
+      return res.status(404).json({ message: "BrandKit is not found" });
+    }
+
+ 
+    if (brandKit.user.toString() !== req.user.id.toString()) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    await BrandKit.findByIdAndDelete(req.params.id);
+    return res.json({ message: "BrandKit Deleted Successfully!" });
+  } catch (error) {
+    console.error("Delete BrandKit Error:", error); // log actual error
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+
+export default { createBrandKit, getBrandKitsbyId, getUserBrandKits,deleteBrandKit };

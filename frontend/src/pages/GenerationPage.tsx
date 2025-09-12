@@ -9,7 +9,7 @@ const GenerationPage: React.FC = () => {
     const { startGeneration, isLoading } = useBrandKitStore();
     const navigate = useNavigate();
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = (  e: React.FormEvent) => {
         e.preventDefault();
         if (!businessIdea.trim() || isLoading) return;
         startGeneration(businessIdea, navigate);

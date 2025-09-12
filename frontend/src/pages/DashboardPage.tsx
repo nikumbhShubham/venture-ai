@@ -11,9 +11,10 @@ import {
   Wind,
   CheckCircle,
   XCircle,
+  Trash2,
 } from "lucide-react";
+import { deleteBrandKitId } from "../services/apiService.ts";
 
-// A simple, self-contained Toast component
 const Toast = ({
   message,
   type,
@@ -51,8 +52,45 @@ const Toast = ({
   );
 };
 
+const ConfirmModal = ({
+  message,
+  onConfirm,
+  onCancel,
+}: {
+  message: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) => {
+  return (
+    <div className="fixed inset-0 flex items-center justify-center bg-black/70 z-50">
+      <motion.div
+        initial={{ scale: 0.8, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        className=" bg-slate-700 text-white rounded-lg shadow-lg p-6 w-96"
+      >
+        <h3 className="text-lg font-bold mb-4">Confirm Deletion</h3>
+        <p className="text-slate-300 mb-6">{message}</p>
+        <div className="flex justify-end gap-4">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 bg-slate-600 rounded-lg hover:bg-slate-700"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            className="px-4 py-2 bg-red-600 rounded-lg hover:bg-red-700"
+          >
+            Delete
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
 const DashboardPage: React.FC = () => {
-    const { user, logout, fetchUserProfile } = useAuthStore();
+  const { user, logout, fetchUserProfile } = useAuthStore();
   const { brandKits, isLoading, fetchBrandKits } = useBrandKitStore();
   const [searchParams, setSearchParams] = useSearchParams();
   const [toast, setToast] = useState<{
@@ -60,38 +98,50 @@ const DashboardPage: React.FC = () => {
     type: "success" | "error";
   } | null>(null);
 
-  // Sync local user whenever store changes
- 
+  const [confirmDelete, setConfirmDelete] = useState<null | string>(null);
 
   useEffect(() => {
-    const handlePaymentParams = async () => {
-      await fetchBrandKits(); // first load kits
+    fetchBrandKits();
 
-      if (searchParams.get("payment_success")) {
-        setToast({
-          message: "Subscription successful! Welcome to Pro.",
-          type: "success",
-        });
-        await fetchUserProfile(); // fetch latest credits
-        // setUser(updatedUser); // trigger re-render with new credits
-        const newParams = new URLSearchParams(searchParams.toString());
-        newParams.delete("payment_success");
-        setSearchParams(newParams);
-      }
+    // --- Check for Stripe redirect parameters ---
+    if (searchParams.get("payment_success")) {
+      setToast({
+        message: "Subscription successful! Welcome to Pro.",
+        type: "success",
+      });
+      // --- FIX 1: Refetch user profile to update credits ---
+      fetchUserProfile();
+      const newParams = new URLSearchParams(searchParams.toString());
+      newParams.delete("payment_success");
+      setSearchParams(newParams);
+    }
+    if (searchParams.get("payment_canceled")) {
+      setToast({
+        message: "Payment was canceled. Your plan was not changed.",
+        type: "error",
+      });
+      const newParams = new URLSearchParams(searchParams.toString());
+      newParams.delete("payment_canceled");
+      setSearchParams(newParams);
+    }
+  }, [fetchBrandKits, searchParams, setSearchParams, fetchUserProfile]);
 
-      if (searchParams.get("payment_canceled")) {
-        setToast({
-          message: "Payment was canceled. Your plan was not changed.",
-          type: "error",
-        });
-        const newParams = new URLSearchParams(searchParams.toString());
-        newParams.delete("payment_canceled");
-        setSearchParams(newParams);
-      }
-    };
+  const {setBrandKits}=useBrandKitStore();
 
-    handlePaymentParams();
-  }, [fetchBrandKits, fetchUserProfile, searchParams, setSearchParams]);
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteBrandKitId(id);
+      setBrandKits(brandKits.filter((kit)=>kit._id!==id));
+      setToast({ message: "BrandKit deleted successfully!", type: "success" });
+    } catch (error: any) {
+      setToast({
+        message: error.message || "Failed to delete BrandKit.",
+        type: "error",
+      });
+    } finally {
+      setConfirmDelete(null);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#0a0f1f] text-slate-200 font-sans">
@@ -101,10 +151,9 @@ const DashboardPage: React.FC = () => {
         </Link>
         <div className="flex items-center gap-4">
           <div className="text-sm">
-            {/* Credits:{" "} */} Credits :{" "}
+            Credits:{" "}
             <span className="font-bold text-purple-400">
               {user?.credits ?? 0}
-              {/* {user.credits} */}
             </span>
           </div>
           <button
@@ -157,50 +206,58 @@ const DashboardPage: React.FC = () => {
               const hasValidLogo =
                 kit.status === "completed" &&
                 kit.logoConcept &&
-                !kit.logoConcept.includes("generation_failed");
-
+                !kit.logoConcept.includes("generation_failed") &&
+                kit.logoConcept !== "placeholder.png";
               return (
-                <Link to={`/results/${kit._id}`} key={kit._id}>
-                  <motion.div
-                    variants={{
-                      hidden: { y: 20, opacity: 0 },
-                      visible: { y: 0, opacity: 1 },
-                    }}
-                    className="bg-slate-800/50 backdrop-blur-md rounded-xl shadow-lg border border-slate-700 overflow-hidden h-full hover:border-purple-400/50 transition-all group"
-                  >
-                    <div className="p-6 flex flex-col h-full">
-                      <div className="w-full h-40 bg-slate-700 rounded-md mb-4 flex flex-col items-center justify-center relative overflow-hidden p-4">
-                        {kit.status === "completed" ? (
-                          hasValidLogo ? (
-                            <img
-                              src={logoUrl}
-                              alt={`${kit.brandName} Logo`}
-                              className="w-full h-full object-contain"
-                            />
+                <div key={kit._id} className="relative group">
+                  <Link to={`/results/${kit._id}`} key={kit._id}>
+                    <motion.div
+                      variants={{
+                        hidden: { y: 20, opacity: 0 },
+                        visible: { y: 0, opacity: 1 },
+                      }}
+                      className="bg-slate-800/50 backdrop-blur-md rounded-xl shadow-lg border border-slate-700 overflow-hidden h-full hover:border-purple-400/50 transition-all group"
+                    >
+                      <div className="p-6 flex flex-col h-full">
+                        <div className="w-full h-40 bg-slate-700 rounded-md mb-4 flex flex-col items-center justify-center relative overflow-hidden p-4">
+                          {kit.status === "completed" ? (
+                            hasValidLogo ? (
+                              <img
+                                src={logoUrl}
+                                alt={`${kit.brandName} Logo`}
+                                className="w-full h-full object-contain"
+                              />
+                            ) : (
+                              <div className="text-center text-slate-500">
+                                <ImageIcon size={40} className="mx-auto mb-2" />
+                                <p>Logo Failed</p>
+                              </div>
+                            )
                           ) : (
-                            <div className="text-center text-slate-500">
-                              <ImageIcon size={40} className="mx-auto mb-2" />
-                              <p>Logo Failed</p>
+                            <div className="flex flex-col items-center text-center">
+                              <Loader className="animate-spin text-purple-400 mb-2" />
+                              <span className="text-slate-300 font-semibold">
+                                Generating...
+                              </span>
                             </div>
-                          )
-                        ) : (
-                          <div className="flex flex-col items-center text-center">
-                            <Loader className="animate-spin text-purple-400 mb-2" />
-                            <span className="text-slate-300 font-semibold">
-                              Generating...
-                            </span>
-                          </div>
-                        )}
+                          )}
+                        </div>
+                        <h3 className="text-xl font-bold text-white truncate">
+                          {kit.brandName}
+                        </h3>
+                        <p className="text-sm text-slate-400 truncate flex-grow">
+                          {kit.businessIdea}
+                        </p>
                       </div>
-                      <h3 className="text-xl font-bold text-white truncate">
-                        {kit.brandName}
-                      </h3>
-                      <p className="text-sm text-slate-400 truncate flex-grow">
-                        {kit.businessIdea}
-                      </p>
-                    </div>
-                  </motion.div>
-                </Link>
+                    </motion.div>
+                  </Link>
+                  <button
+                    onClick={() => setConfirmDelete(kit._id)}
+                    className="absolute top-2 right-2 bg-red-600 text-white text-xs px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition"
+                  >
+                    <Trash2 />
+                  </button>
+                </div>
               );
             })}
           </motion.div>
@@ -215,6 +272,13 @@ const DashboardPage: React.FC = () => {
           />
         )}
       </AnimatePresence>
+      {confirmDelete && (
+        <ConfirmModal
+          message="Are you sure you want to delete this brand kit?"
+          onConfirm={() => handleDelete(confirmDelete)}
+          onCancel={() => setConfirmDelete(null)}
+        />
+      )}
     </div>
   );
 };

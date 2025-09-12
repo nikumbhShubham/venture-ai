@@ -6,6 +6,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 
+
 def creative_director_node(state: VentureAgentState) -> dict:
     """
     A single, powerful agent that generates all text and marketing assets in one call.
@@ -15,9 +16,11 @@ def creative_director_node(state: VentureAgentState) -> dict:
     llm = ChatGoogleGenerativeAI(
         model="gemini-1.5-flash",
         temperature=0.8,
-        google_api_key=os.getenv("GEMINI_API_KEY"),
-        model_kwargs={"response_mime_type": "application/json"}
+        api_key=os.getenv("GEMINI_API_KEY"),  # renamed param
+        response_format="json",               # instead of model_kwargs
     )
+
+
     
     parser = JsonOutputParser()
 
@@ -48,7 +51,8 @@ def creative_director_node(state: VentureAgentState) -> dict:
         # Return all the generated data to be merged into the state
         return {
             "brand_name": response_json.get("brand_name"),
-            "target_persona": response_json.get("target_persona"),
+            # "target_persona": response_json.get("target_persona"),
+            "target_persona": json.dumps(response_json.get("target_persona")), 
             "brand_story": response_json.get("brand_story"),
             "market_positioning": response_json.get("market_positioning"),
             "marketing_channels": response_json.get("marketing_channels"),

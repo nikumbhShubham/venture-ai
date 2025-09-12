@@ -40,8 +40,8 @@ export const getUserProfile = async () => {
 
 export const getBrandKits=()=> api.get('brandkits');
 export const createBrandKit=(data:{businessIdea:string})=> api.post('brandkits',data);
-
-
 export const getBrandKitById=()=>(id:string)=>api.get(`brandkits/${id}`);
+export const deleteBrandKitId=(id:string)=>api.delete(`brandkits/${id}`);
+
 
 export const createCheckoutSession = (priceId: string) => api.post('stripe/create-checkout-session', { priceId });

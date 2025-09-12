@@ -54,8 +54,8 @@ def visual_designer_node(state: VentureAgentState) -> dict:
     llm = ChatGoogleGenerativeAI(
         model="gemini-1.5-flash",
         temperature=0.7,
-        google_api_key=os.getenv("GEMINI_API_KEY"),
-        model_kwargs={"response_mime_type": "application/json"}
+        api_key=os.getenv("GEMINI_API_KEY"),
+        response_format="json",
     )
     
     parser = JsonOutputParser()

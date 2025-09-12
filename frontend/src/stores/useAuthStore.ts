@@ -47,17 +47,23 @@ export const useAuthStore=create<AuthState>()(
                 set({user:null,token:null});
                 window.location.href="/login"
             },
-           fetchUserProfile: async () => {
-  try {
-    const { data } = await getUserProfile();
-    set({ user: data });
-    return data; // <-- return updated user
-  } catch (error) {
-    console.error("Failed to refetch user profile", error);
-  }
-},
-
-
+            fetchUserProfile: async () => {
+                try {
+                    const { data } = await getUserProfile();
+                    set(state => ({ user: { ...state.user, ...data } })); // Merge new data
+                } catch (error) {
+                    console.error("Failed to refetch user profile", error);
+                }
+            },
+            
+            decrementCredits: () => {
+                set(state => {
+                    if (state.user && state.user.credits > 0) {
+                        return { user: { ...state.user, credits: state.user.credits - 1 } };
+                    }
+                    return {};
+                });
+            },
             clearError:()=>set({error:null})
         }),
         {
